@@ -4,7 +4,7 @@ const tasksRef = db.collection('tasks')
 export function createTask(data) {
   const { id } = data 
   return new Promise((resolve, reject) => {
-    tasksRef.doc(`${id}`).set({ data }, { merge: true }).then(() => {
+    tasksRef.doc(`${id}`).set(data, { merge: true }).then(() => {
       resolve()
     }).catch((err) => reject(err))
   })
@@ -12,17 +12,12 @@ export function createTask(data) {
 
 export function getTasks() {
   return new Promise((resolve, reject) => {
-    tasksRef.get().then((docSnapshot) => {
-      if (!docSnapshot.empty) {
-        const docs = docSnapshot.docs
-        let tasks = []
-        docs.forEach((doc) => {
-          tasks.push(doc.data().data)
-        })
-        resolve(tasks)
-      } else {
-        resolve([])
-      }
+    db.collection('tasks').orderBy('created_time', 'asc').get().then((querySnapshot) => {
+      let tasks = []
+      querySnapshot.forEach((doc) => {
+        tasks.push(doc.data())
+      })
+      resolve(tasks)
     }).catch((err) => reject(err))
   })
 }
