@@ -8,6 +8,7 @@
           v-model="task"
           placeholder="Add new tasks"
           hide-details
+          @keyup.enter="createTask()"
         )
           template(v-slot:append-outer)
             v-icon(
@@ -16,7 +17,7 @@
             ) mdi-plus-circle
       v-divider
       div(v-if="tasks && tasks.length > 0")
-        v-subheader Doing 
+        v-subheader Tasks
           span.pl-2(v-show="tasks.length > 0") ( {{ `${completed.length} of ${tasks.length}` }} )
         v-list-item(v-for="item in tasks")
           template
@@ -108,17 +109,19 @@ export default {
       }) 
     },
     createTask(type = 'doing') {
-      const data = {
-        title: this.task,
-        id: this.setTaskId(),
-        status: type,
-        active: false,
-        created_time: new Date()
-      }
+      if (this.task !== '') {
+        const data = {
+          title: this.task,
+          id: this.setTaskId(),
+          status: type,
+          active: false,
+          created_time: new Date()
+        }
 
-      api.List.createTask(data)
-      this.tasks.push(data)
-      this.clearInput()
+        api.List.createTask(data)
+        this.tasks.push(data)
+        this.clearInput()
+      }
     },
     removeTask(taskId) {
       const completedIndex = this.completed.indexOf(taskId) < 0 ? null : this.completed.indexOf(taskId)
