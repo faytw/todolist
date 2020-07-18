@@ -2,7 +2,7 @@
   v-card.mx-auto.mt-5(max-width="475")
     v-toolbar(color="teal" dark)
       v-toolbar-title To-Do-List
-    v-list(subheader min-height="400")
+    v-list(subheader min-height="150")
       v-col.mb-2(col=8)
         v-text-field(
           v-model="task"
@@ -15,20 +15,21 @@
               v-show="task !== ''"
             ) mdi-plus-circle
       v-divider
-      v-subheader Doing 
-        span.pl-2(v-show="tasks.length > 0") ( {{ `${completed.length} of ${tasks.length}` }} )
-      v-list-item(v-for="item in tasks")
-        template
-          v-list-item-action
-            v-checkbox(
-              v-model="item.active"
-              color="primary" 
-              @click.native="handleCompletedTask(item.id)"
-            )
-          v-list-item-content(max-width="300")
-            v-list-item-title {{ item.title }}
-          v-list-item-icon(@click="removeTask(item.id)")
-            v-icon mdi-trash-can
+      div(v-if="tasks && tasks.length > 0")
+        v-subheader Doing 
+          span.pl-2(v-show="tasks.length > 0") ( {{ `${completed.length} of ${tasks.length}` }} )
+        v-list-item(v-for="item in tasks")
+          template
+            v-list-item-action
+              v-checkbox(
+                v-model="item.active"
+                color="primary" 
+                @click.native="handleCompletedTask(item.id)"
+              )
+            v-list-item-content(max-width="300")
+              v-list-item-title {{ item.title }}
+            v-list-item-icon(@click="removeTask(item.id)")
+              v-icon mdi-trash-can
 </template>
 
 <script>
@@ -76,12 +77,9 @@ export default {
     },
     handleCompletedTask(taskId) {
       if (this.completed.indexOf(taskId) < 0) {
-        console.log('completed' , taskId)
         this.completed.push(taskId)
         this.handleTaskStatus(taskId, 'completed')
       } else {
-                console.log('doing' , taskId)
-
         const taskIndex = this.completed.indexOf(taskId)
         this.completed.splice(taskIndex, 1)
         this.handleTaskStatus(taskId, 'doing')
@@ -99,9 +97,7 @@ export default {
         return task
       })
       const data = this.tasks.filter((task) => task.id === taskId)[0]
-      api.List.createTask(data).then(() => {
-        this.getTasks()
-      })
+      api.List.createTask(data)
     },
     getTasks() {
       this.clearData()
@@ -119,16 +115,31 @@ export default {
         active: false,
         created_time: new Date()
       }
-      api.List.createTask(data)
 
+      api.List.createTask(data)
+      this.tasks.push(data)
       this.clearInput()
-      this.getTasks()
     },
     removeTask(taskId) {
-      api.List.removeTask(taskId).then(() => {
-        this.getTasks()
+      const completedIndex = this.completed.indexOf(taskId) < 0 ? null : this.completed.indexOf(taskId)
+      let taskIndex = 0
+      this.tasks.forEach((item, index) => {
+        if (item.id === taskId) taskIndex = index
       })
+      if (completedIndex !== null) this.completed.splice(completedIndex, 1)
+      if (taskIndex !== null) this.tasks.splice(taskIndex, 1)
+
+      api.List.removeTask(taskId)
     },
   },
 }
 </script>
+
+<style>
+.mdi-trash-can {
+  cursor: pointer;
+}
+.mdi-trash-can:hover {
+  color: #000;
+}
+</style>
