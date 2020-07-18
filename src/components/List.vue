@@ -2,7 +2,7 @@
   v-card.mx-auto.mt-5(max-width="475")
     v-toolbar(color="teal" dark)
       v-toolbar-title To-Do-List
-    v-list(subheader min-height="200")
+    v-list(subheader min-height="400")
       v-col.mb-2(col=8)
         v-text-field(
           v-model="task"
@@ -21,7 +21,7 @@
         template
           v-list-item-action
             v-checkbox(
-              v-model="item.status==='completed'"
+              v-model="item.active"
               color="primary" 
               @click.native="handleCompletedTask(item.id)"
             )
@@ -39,7 +39,6 @@ export default {
   name: 'ToDoList',
   data() {
     return {
-      init: false,
       completed: [],
       tasks: [],
       task: ''
@@ -53,13 +52,16 @@ export default {
   },
   watch: {
     tasks(val) {
-      if (val && val.length > 0) this.init = true
-    },
-    completed(val) {
-      if(val && val.length > 0) {
-
-      }
-    },
+      val.forEach((task) => {
+        const type = task.status
+        const taskId = task.id
+        switch(type) {
+          case 'completed':
+            if (this.completed.indexOf(taskId) < 0) this.completed.push(taskId)
+            break
+        }
+      })
+    }
   },
   methods: {
     clearData() {
@@ -74,9 +76,12 @@ export default {
     },
     handleCompletedTask(taskId) {
       if (this.completed.indexOf(taskId) < 0) {
+        console.log('completed' , taskId)
         this.completed.push(taskId)
         this.handleTaskStatus(taskId, 'completed')
       } else {
+                console.log('doing' , taskId)
+
         const taskIndex = this.completed.indexOf(taskId)
         this.completed.splice(taskIndex, 1)
         this.handleTaskStatus(taskId, 'doing')
@@ -88,33 +93,30 @@ export default {
           task = {
             ...task,
             status,
+            active: status === 'completed' 
           }
         }
         return task
       })
+      const data = this.tasks.filter((task) => task.id === taskId)[0]
+      api.List.createTask(data).then(() => {
+        this.getTasks()
+      })
     },
     getTasks() {
-      if (this.init) this.clearData()
-
-      const tasks = api.List.getTasks()
-      if (tasks && tasks.length > 0) {
-        this.tasks = tasks
-        tasks.forEach((task) => {
-        const type = task.status
-        const taskId = task.id
-        switch(type) {
-          case 'completed':
-            this.completed.push(taskId)
-            break
-          }
-        })
-      }
+      this.clearData()
+      api.List.getTasks().then((tasks) => {
+        if (tasks && tasks.length > 0) {
+          this.tasks = tasks
+        }
+      }) 
     },
     createTask(type = 'doing') {
       const data = {
         title: this.task,
         id: this.setTaskId(),
         status: type,
+        active: false,
         created_time: new Date()
       }
       api.List.createTask(data)
@@ -123,16 +125,9 @@ export default {
       this.getTasks()
     },
     removeTask(taskId) {
-      const completedIndex = this.completed.indexOf(taskId) < 0 ? null : this.completed.indexOf(taskId)
-      let taskIndex = 0
-      this.tasks.forEach((item, index) => {
-        if (item.id === taskId) taskIndex = index
+      api.List.removeTask(taskId).then(() => {
+        this.getTasks()
       })
-      if (completedIndex) this.completed.splice(completedIndex, 1)
-      if (taskIndex) this.tasks.splice(taskIndex, 1)
-
-      api.List.removeTask(taskId)
-      this.getTasks()
     },
   },
 }
