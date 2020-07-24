@@ -30,8 +30,18 @@ export function removeTask(taskId) {
   })
 }
 
+export function updateTask(data) {
+  const { id , title } = data 
+  return new Promise((resolve, reject) => {
+    tasksRef.doc(`${id}`).set({title}, { merge: true }).then(() => {
+      resolve()
+    }).catch((err) => reject(err))
+  })
+}
+
 export default {
   createTask,
   getTasks,
   removeTask,
+  updateTask,
 }

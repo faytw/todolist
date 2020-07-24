@@ -19,7 +19,7 @@
       div(v-if="tasks && tasks.length > 0")
         v-subheader Tasks
           span.pl-2(v-show="tasks.length > 0") ( {{ `${completed.length} of ${tasks.length}` }} )
-        v-list-item(v-for="item in tasks")
+        v-list-item(v-for="(item, index) in tasks")
           template
             v-list-item-action
               v-checkbox(
@@ -28,7 +28,18 @@
                 @click.native="handleCompletedTask(item.id)"
               )
             v-list-item-content(max-width="300")
-              v-list-item-title {{ item.title }}
+              v-list-item-title(
+                v-show="item.id !== editTaskId || !item.selected"
+                @click="selectTask(item.id, index)"
+              ) {{ item.title }}
+              v-text-field.pt-0(
+                v-show="item.id === editTaskId"
+                v-model="newTitle"
+                :placeholder="item.title"
+                hide-details
+                @blur="editTaskTitle(item.id, index)"
+                @keyup.enter="editTaskTitle(item.id, index)"
+              )
             v-list-item-icon(@click="removeTask(item.id)")
               v-icon mdi-trash-can
 </template>
@@ -43,7 +54,9 @@ export default {
     return {
       completed: [],
       tasks: [],
-      task: ''
+      task: '',
+      newTitle: '',
+      editTaskId: ''
     }
   },
   mounted() {
@@ -72,6 +85,26 @@ export default {
     },
     clearInput() {
       this.task = ''
+    },
+    clearEdit() {
+      this.newTitle = ''
+      this.editTaskId = ''
+    },
+    editTaskTitle(taskId, taskIndex,) {
+      if (this.newTitle !== '') {
+        this.tasks[taskIndex].title = this.newTitle
+        const data = {
+          id: taskId,
+          title: this.newTitle
+        }
+        api.List.updateTask(data)
+      }
+      this.tasks[taskIndex].selected = false
+      this.clearEdit()
+    },
+    selectTask(taskId, taskIndex) {
+      this.editTaskId = taskId
+      this.tasks[taskIndex].selected = true
     },
     setTaskId() {
       return setUuId()
